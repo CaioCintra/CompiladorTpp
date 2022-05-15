@@ -822,7 +822,6 @@ def main():
     global root
     root = None
     aux = argv[1].split('.')
-    print('aoba ',aux)
     if aux[-1] != 'tpp':
       raise IOError("Not a .tpp file!")
     data = open(argv[1])
@@ -847,7 +846,9 @@ def main():
 
     else:
         print("Unable to generate Syntax Tree.")
+
     print('\n\n')
+    return root
 
 parser = yacc.yacc(method="LALR", optimize=True, start='programa', debug=True,
                    debuglog=log, write_tables=False, tabmodule='tpp_parser_tab')
