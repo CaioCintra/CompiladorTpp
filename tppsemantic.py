@@ -11,6 +11,7 @@ def treeTravel(root):
     global dataFrameFunc
     listNode = ''
     for node in root.children:
+        parametros = []
         #print(node.label)
         if (node.label == 'declaracao_variaveis'):
             token = node.children[2].children[0].children[0].label
@@ -18,11 +19,26 @@ def treeTravel(root):
             tipo = node.children[0].children[0].label
             dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo}, ignore_index=True)
 
+
         if (node.label == 'declaracao_funcao'):
             tipo = node.children[0].children[0].label
             token = node.children[1].children[0].label
             lexema = node.children[1].children[0].children[0].label
-            parametros = 0
+            
+            if (node.children[1].children[2].label == 'lista_parametros'):
+                i = 0
+                if (node.children[1].children[2].children[0].label != 'vazio'):
+                    if (node.children[1].children[2].children[0].label == 'lista_parametros'):
+                        if (node.children[1].children[2].children[i].children[0].children[2].children[0].label != None):
+                            id = node.children[1].children[2].children[i].children[0].children[2].children[0].label
+                            parametros.append(id)
+                            i = i+2
+                    else:
+                        if (node.children[1].children[2].children[i].children[2].children[0].label != None):
+                            id = node.children[1].children[2].children[i].children[2].children[0].label
+                            parametros.append(id)
+                            i = i+2                     
+            
             dataFrameFunc = dataFrameFunc.append({'TOKEN' : token, 'LEXEMA' : lexema, 'PARAMETROS' : parametros, 'TIPO' : tipo}, ignore_index=True)
         listNode = treeTravel(node)
     return listNode
