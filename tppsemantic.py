@@ -2,7 +2,7 @@ import tppparser
 import pandas as pd
 
 global dataFrameVar 
-dataFrameVar = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'TIPO'])
+dataFrameVar = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'TIPO', 'INIT'])
 global dataFrameFunc 
 dataFrameFunc = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'PARAMETROS', 'TIPO'])
 
@@ -18,7 +18,11 @@ def treeTravel(root):
             tipo = node.children[0].children[0].label
             dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo, 'INIT': 'N'}, ignore_index=True)
 
-
+        if (node.label == 'atribuicao'):
+          for ind in dataFrameVar.index:
+            if(dataFrameVar['LEXEMA'][ind] == node.children[0].children[0].children[0].label):
+                dataFrameVar['INIT'][ind] = node.children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].label
+                              
         if (node.label == 'declaracao_funcao'):
             tipo = node.children[0].children[0].label
             token = node.children[1].children[0].label
@@ -49,29 +53,23 @@ def treeTravel(root):
 
     return listNode
 
-def varValue(root):
-    global dataFrameVar 
-
-    for node in root.children:
-        if (node.label == 'atribuicao'):
-            line = dataFrameVar[dataFrameVar['LEXEMA'] == node.children[0].children[0].children[0].label].index
-            print('\n----------------------------------------')
-            print(line)
-            dataFrameVar.iloc[line,'INIT'] = node.children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].label
-            print(dataFrameVar.iloc[line,'INIT'])
-            print('\n----------------------------------------')
-
 def main():
     tree = tppparser.main()
     treeCall = treeTravel(tree)
-    varValue(tree)
     print ('\nTabela de Símbolos')
+    global dataFrameVar
     print (dataFrameVar)
+    print ('\n')
+
+    for ind in dataFrameVar.index:
+        if(dataFrameVar['INIT'][ind] == 'N'):
+            print('Aviso: Variável',dataFrameVar['LEXEMA'][ind],'declarada e não utilizada')
 
     global dataFrameFunc
     if (len(dataFrameFunc) != 0):
         print ('\nTabela de Funções')
         print (dataFrameFunc)
+        print ('\n')
     else:
         print('\nErro: Função principal não declarada\n')
 
