@@ -1,4 +1,4 @@
-{Aviso: Variável 'b' declarada e não utilizada}
+{Aviso: Variável 'c' declarada e não utilizada}
 {Aviso: Atribuição de tipos distintos 'b' inteiro e 'c' flutuante}
 {Aviso: Atribuição de tipos distintos 'a' flutuante e 'func' retorna inteiro}
 {Erro: Função principal deveria retornar inteiro, mas retorna vazio}
