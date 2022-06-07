@@ -2,9 +2,9 @@ import tppparser
 import pandas as pd
 
 global dataFrameVar 
-dataFrameVar = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'TIPO', 'INIT'])
+dataFrameVar = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'TIPO', 'DIM','TAM_DIM', 'INIT'])
 global dataFrameFunc 
-dataFrameFunc = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'PARAMETROS', 'TIPO'])
+dataFrameFunc = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'PARAMETROS', 'TIPO', 'RETORNO'])
 
 def treeTravel(root):
     global dataFrameVar 
@@ -16,7 +16,13 @@ def treeTravel(root):
             token = node.children[2].children[0].children[0].label
             lexema = node.children[2].children[0].children[0].children[0].label
             tipo = node.children[0].children[0].label
-            dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo, 'INIT': 'N'}, ignore_index=True)
+            if(len(node.children[2].children[0].children)>1):
+                dim = 1
+                tam_dim = node.children[2].children[0].children[1].children[1].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].label
+            else:
+                dim = 0
+                tam_dim = 0
+            dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo, 'DIM': dim, 'TAM_DIM': tam_dim, 'INIT': 'N'}, ignore_index=True)
 
         if (node.label == 'atribuicao'):
           for ind in dataFrameVar.index:
@@ -27,6 +33,7 @@ def treeTravel(root):
             tipo = node.children[0].children[0].label
             token = node.children[1].children[0].label
             lexema = node.children[1].children[0].children[0].label
+            retorno = 'vazio'
             
             if (node.children[1].children[2].label == 'lista_parametros'):
                 if (node.children[1].children[2].children[0].label != 'vazio'):
@@ -47,31 +54,52 @@ def treeTravel(root):
                             parametros.append(a)
                 else:
                     parametros = 'vazio'
-            
-            dataFrameFunc = dataFrameFunc.append({'TOKEN' : token, 'LEXEMA' : lexema, 'PARAMETROS' : parametros, 'TIPO' : tipo}, ignore_index=True)
+                
+            if(node.children[1].children[4].children[1].children[0].label == 'retorna'):
+                if(node.children[1].children[4].children[1].children[0].children[1].label == '('):
+                    retorno = node.children[1].children[4].children[1].children[0].children[2].label
+            dataFrameFunc = dataFrameFunc.append({'TOKEN' : token, 'LEXEMA' : lexema, 'PARAMETROS' : parametros, 'TIPO' : tipo, 'RETORNO' : retorno}, ignore_index=True)
+        
+        if (node.label == 'chamada_funcao'):
+            funcCalled = node.children[0].children[0].label
+            funcExists = 0
+            for ind in dataFrameFunc.index:
+                if(dataFrameFunc['LEXEMA'][ind] == funcCalled):
+                    funcExists = 1
+            if(funcExists == 0):
+                print('\nErro: Chamada a função',funcCalled,'que não foi declarada')
+
         listNode = treeTravel(node)       
 
     return listNode
 
 def main():
+    print ('\n\n')
     tree = tppparser.main()
     treeCall = treeTravel(tree)
-    print ('\nTabela de Símbolos')
     global dataFrameVar
-    print (dataFrameVar)
-    print ('\n')
-
+    global dataFrameFunc
     for ind in dataFrameVar.index:
         if(dataFrameVar['INIT'][ind] == 'N'):
-            print('Aviso: Variável',dataFrameVar['LEXEMA'][ind],'declarada e não utilizada')
+            print('\nAviso: Variável',dataFrameVar['LEXEMA'][ind],'declarada e não utilizada')
+        if(dataFrameVar['TAM_DIM'][ind] != 0 and float(dataFrameVar['TAM_DIM'][ind]) % 1 != '0'):
+            print('\nErro: índice de array',dataFrameVar['LEXEMA'][ind],'não inteiro')
+    for ind in dataFrameFunc.index:
+        if(dataFrameFunc['RETORNO'][ind] == 'vazio'):
+            print('\nErro: Função',dataFrameFunc['LEXEMA'][ind],'deveria retornar',dataFrameFunc['TIPO'][ind],', mas retorna vazio')
+    if (len(dataFrameFunc) == 0):
+        print('\nErro: Função principal não declarada')
 
-    global dataFrameFunc
+    if (len(dataFrameVar) != 0):
+        print ('\nTabela de Símbolos')
+        print (dataFrameVar)
+        print ('\n')
+
     if (len(dataFrameFunc) != 0):
         print ('\nTabela de Funções')
         print (dataFrameFunc)
         print ('\n')
-    else:
-        print('\nErro: Função principal não declarada\n')
 
+    print ('\n')
 if __name__ == "__main__":
     main()
