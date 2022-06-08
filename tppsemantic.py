@@ -16,19 +16,43 @@ def treeTravel(root):
             token = node.children[2].children[0].children[0].label
             lexema = node.children[2].children[0].children[0].children[0].label
             tipo = node.children[0].children[0].label
+            varFlag = 0
             if(len(node.children[2].children[0].children)>1):
                 dim = 1
                 tam_dim = node.children[2].children[0].children[1].children[1].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].label
             else:
                 dim = 0
                 tam_dim = 0
-            dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo, 'DIM': dim, 'TAM_DIM': tam_dim, 'INIT': 'N'}, ignore_index=True)
+            for f in dataFrameVar.index:
+                if(lexema == dataFrameVar['LEXEMA'][f]):
+                    varFlag = 1
+                    print('\nAviso: Variável',lexema,'já declarada anteriormente')
+            if(varFlag == 0):
+                dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo, 'DIM': dim, 'TAM_DIM': tam_dim, 'INIT': 'N'}, ignore_index=True)
 
         if (node.label == 'atribuicao'):
-          for ind in dataFrameVar.index:
-            if(dataFrameVar['LEXEMA'][ind] == node.children[0].children[0].children[0].label):
-                dataFrameVar['INIT'][ind] = node.children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].label
-                              
+            # if(node.label == ID):
+            #   varExists = 0
+            #   for ind in dataFrameVar.index:
+            #       if(node.children[0].label == dataFrameVar['LEXEMA'][ind]):
+                        # varExists = 1
+                    # if(varExists == 0):
+                    #     print('Erro: Variável',node.children[0].label,'não declarada')
+
+            # Procurar na arvore
+
+            for ind in dataFrameVar.index:
+                if(dataFrameVar['LEXEMA'][ind] == node.children[0].children[0].children[0].label):
+                    dataFrameVar['INIT'][ind] = node.children[2].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].children[0].label
+                    varType = dataFrameVar['TIPO'][ind]
+                    for n in dataFrameVar.index:
+                        if(dataFrameVar['INIT'][ind] == dataFrameVar['LEXEMA'][n]):
+                            if(dataFrameVar['TIPO'][n] != varType):
+                                print('\nAviso: Atribuição de tipos distintos',dataFrameVar['LEXEMA'][ind],varType,'e',dataFrameVar['LEXEMA'][n],dataFrameVar['TIPO'][n])  
+                    for n in dataFrameFunc.index:
+                        if(dataFrameVar['INIT'][ind] == dataFrameFunc['LEXEMA'][n]):
+                            if(dataFrameFunc['TIPO'][n] != varType):
+                                print('\nAviso: Atribuição de tipos distintos',dataFrameVar['LEXEMA'][ind],varType,'e',dataFrameFunc['LEXEMA'][n],'retorna',dataFrameFunc['TIPO'][n])                    
         if (node.label == 'declaracao_funcao'):
             tipo = node.children[0].children[0].label
             token = node.children[1].children[0].label
