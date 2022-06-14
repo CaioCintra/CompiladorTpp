@@ -6,6 +6,30 @@ dataFrameVar = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'TIPO', 'DI
 global dataFrameFunc 
 dataFrameFunc = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'QTD_PARAM', 'PARAMETROS', 'TIPO', 'RETORNO'])
 
+def declaredVar(knot):
+    global dataFrameVar 
+    varExists = -1
+    varName = ''
+    for node in knot.children:
+        if(node.label == 'ID'):
+            for ind in range(len(dataFrameFunc)):
+                if(node.children[0].label == dataFrameFunc['LEXEMA'][ind]):
+                    return
+            for ind in range(len(dataFrameVar)):
+                if(node.children[0].label == dataFrameVar['LEXEMA'][ind]):
+                    varExists = 1
+                varName = node.children[0].label
+
+            if(varExists == -1):
+                varExists = 0
+        declaredVar(node)
+    
+    if(varExists == 0):
+        print('\nErro: Variável',varName,'não declarada')
+        return
+    return
+
+
 def treeTravel(root):
     global dataFrameVar 
     global dataFrameFunc
@@ -31,15 +55,7 @@ def treeTravel(root):
                 dataFrameVar = dataFrameVar.append({'TOKEN' : token, 'LEXEMA' : lexema, 'TIPO' : tipo, 'DIM': dim, 'TAM_DIM': tam_dim, 'INIT': 'N'}, ignore_index=True)
 
         if (node.label == 'atribuicao'):
-            # if(node.label == ID):
-            #   varExists = 0
-            #   for ind in dataFrameVar.index:
-            #       if(node.children[0].label == dataFrameVar['LEXEMA'][ind]):
-                        # varExists = 1
-                    # if(varExists == 0):
-                    #     print('Erro: Variável',node.children[0].label,'não declarada')
-
-            # Procurar na arvore
+            declaredVar(node)
 
             for ind in dataFrameVar.index:
                 if(dataFrameVar['LEXEMA'][ind] == node.children[0].children[0].children[0].label):
@@ -54,29 +70,36 @@ def treeTravel(root):
                             if(dataFrameFunc['TIPO'][n] != varType):
                                 print('\nAviso: Atribuição de tipos distintos',dataFrameVar['LEXEMA'][ind],varType,'e',dataFrameFunc['LEXEMA'][n],'retorna',dataFrameFunc['TIPO'][n])                    
         if (node.label == 'declaracao_funcao'):
+            idx = 1
             tipo = node.children[0].children[0].label
-            token = node.children[1].children[0].label
-            lexema = node.children[1].children[0].children[0].label
+            try: 
+                token = node.children[1].children[0].label
+                lexema = node.children[1].children[0].children[0].label
+            except: 
+                token = 'vazio'
+                idx = 0
+                lexema = node.children[0].children[0].children[0].label
+            
             retorno = 'vazio'
             qtd_param = 0
             
-            if (node.children[1].children[2].label == 'lista_parametros'):
-                if (node.children[1].children[2].children[0].label != 'vazio'):
-                    if (node.children[1].children[2].children[0].label == 'lista_parametros'):
-                        if (node.children[1].children[2].children[0].children[0].children[2].children[0].label != None):
-                            id = node.children[1].children[2].children[0].children[0].children[2].children[0].label
+            if (node.children[idx].children[2].label == 'lista_parametros'):
+                if (node.children[idx].children[2].children[0].label != 'vazio'):
+                    if (node.children[idx].children[2].children[0].label == 'lista_parametros'):
+                        if (node.children[idx].children[2].children[0].children[0].children[2].children[0].label != None):
+                            id = node.children[idx].children[2].children[0].children[0].children[2].children[0].label
                             a = id+' '
                             parametros.append(a)
                             qtd_param = qtd_param + 1 
-                            son = len(node.children[1].children[2].children)
+                            son = len(node.children[idx].children[2].children)
                             for i in range (2,son,2):
-                                id = node.children[1].children[2].children[i].children[2].children[0].label
+                                id = node.children[idx].children[2].children[i].children[2].children[0].label
                                 a = id+' '
                                 parametros.append(a)
                                 qtd_param = qtd_param + 1 
                     else:
-                        if (node.children[1].children[2].children[0].children[2].children[0].label != None):
-                            id = node.children[1].children[2].children[0].children[2].children[0].label
+                        if (node.children[idx].children[2].children[0].children[2].children[0].label != None):
+                            id = node.children[idx].children[2].children[0].children[2].children[0].label
                             a = id+' '
                             parametros.append(a)
                             qtd_param = qtd_param + 1 
@@ -84,11 +107,12 @@ def treeTravel(root):
                 else:
                     parametros = 'vazio'
                 
-            if(node.children[1].children[4].children[1].children[0].label == 'retorna'):
-                if(node.children[1].children[4].children[1].children[0].children[1].label == 'ABRE_PARENTESE'):
-                    retorno = node.children[1].children[4].children[1].children[0].children[2].label
+            if(node.children[idx].children[4].children[1].children[0].label == 'retorna'):
+                if(node.children[idx].children[4].children[1].children[0].children[1].label == 'ABRE_PARENTESE'):
+                    retorno = node.children[idx].children[4].children[1].children[0].children[2].label
             dataFrameFunc = dataFrameFunc.append({'TOKEN' : token, 'LEXEMA' : lexema,'QTD_PARAM': qtd_param, 'PARAMETROS' : parametros, 'TIPO' : tipo, 'RETORNO' : retorno}, ignore_index=True)
-        
+            
+
         if (node.label == 'chamada_funcao'):
             funcCalled = node.children[0].children[0].label
             funcExists = 0
@@ -102,10 +126,7 @@ def treeTravel(root):
                 for ind in dataFrameFunc.index:
                     if(dataFrameFunc['LEXEMA'][ind] == funcCalled):
                         if(int(dataFrameFunc['QTD_PARAM'][ind]) > funcParam):
-                            print('\nErro: Chamada à função ',funcCalled,' com número de parâmetros menor que o declarado')
-                        if(int(dataFrameFunc['QTD_PARAM'][ind]) < funcParam):
-                            print(funcParam)
-                            print('\nErro: Chamada à função ',funcCalled,' com número de parâmetros maior que o declarado')
+                            print('\nErro: Chamada à função',funcCalled,'com número de parâmetros menor que o declarado')
 
         listNode = treeTravel(node)       
 
