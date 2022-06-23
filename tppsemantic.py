@@ -132,6 +132,16 @@ def treeTravel(root):
 
     return listNode
 
+def cutTree(knot): #Versão Beta
+    blacklist = []
+    for node in knot.children:
+        print(node.label)
+        if(node.label in blacklist):
+            node.parent.children = node.children
+        cutTree(node)
+    return
+
+
 def main():
     print ('\n\n')
     tree = tppparser.main()
@@ -160,5 +170,6 @@ def main():
         print ('\n')
 
     print ('\n')
+    cutTree(tree)
 if __name__ == "__main__":
     main()
