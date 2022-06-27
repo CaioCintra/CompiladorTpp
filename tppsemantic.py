@@ -1,10 +1,22 @@
 import tppparser
 import pandas as pd
+import sys
+from anytree.exporter import UniqueDotExporter
 
 global dataFrameVar 
 dataFrameVar = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'TIPO', 'DIM','TAM_DIM', 'INIT'])
 global dataFrameFunc 
 dataFrameFunc = pd.DataFrame(data = [], columns = ['TOKEN', 'LEXEMA', 'QTD_PARAM', 'PARAMETROS', 'TIPO', 'RETORNO'])
+
+global blacklist
+blacklist = ['ID', 'var', 'lista_variaveis', 'dois_pontos', 'tipo','INTEIRO', 'FLUTUANTE', 'NUM_INTEIRO', 'NUM_PONTO_FLUTUANTE'
+            ,'NUM_NOTACAO_CIENTIFICA', 'LEIA', 'abre_parentese', 'fecha_parentese','lista_declaracoes', 'declaracao', 'indice',
+            'numero', 'fator','abre_colchete', 'fecha_colchete', 'expressao', 'expressao_logica','expressao_simples',
+            'expressao_aditiva', 'expressao_multiplicativa','expressao_unaria', 'inicializacao_variaveis', 'ATRIBUICAO',
+            'atribuicao','operador_soma', 'mais', 'chamada_funcao', 'lista_argumentos', 'VIRGULA','virgula', 'fator', 'cabecalho',
+            'FIM', 'lista_parametros', 'vazio','(', ')', ':', ',', 'RETORNA', 'ESCREVA', 'SE', 'ENTAO', 'SENAO', 'maior',
+            'menor', 'REPITA', 'igual', 'menos', 'menor_igual', 'maior_igual', 'operador_logico','operador_multiplicacao', 'vezes',
+            'ABRE_PARENTESE','FECHA_PARENTESE','MAIS','operador_relacional','MAIOR','MENOR','IGUAL','soma','parametro','id']
 
 def declaredVar(knot):
     global dataFrameVar 
@@ -132,15 +144,88 @@ def treeTravel(root):
 
     return listNode
 
-def cutTree(knot): #Versão Beta
-    blacklist = []
-    for node in knot.children:
-        print(node.label)
-        if(node.label in blacklist):
-            node.parent.children = node.children
+def cutTree(root):
+    global blacklist
+    for node in root.children:
         cutTree(node)
-    return
 
+    if root.label in blacklist:
+        dad = root.parent
+        aux = []
+        for children in dad.children:
+            if children != root:
+                aux.append(children)
+        for children in root.children:
+            aux.append(children)
+        root.children = aux
+        dad.children = aux
+
+    if root.label == 'declaracao_funcao':
+        corpo = root.children[1]
+        aux = []
+        for children in root.children:
+            if children.label == 'fim':
+                aux.append(corpo)
+            if children != corpo:
+                aux.append(children)
+        root.children = aux
+
+    if root.label == 'corpo' and len(root.children) == 0:
+        dad = root.parent
+        aux = []
+        for children in dad.children:
+            if children != root:
+                aux.append(children)
+        for children in root.children:
+            aux.append(children)
+        root.children = aux
+        dad.children = aux
+
+def newTree(root):
+    for node in root.children:
+        newTree(node)
+
+    dad = root.parent
+    aux = []
+
+    if root.label == 'repita' and len(root.children) > 0:
+        for children in root.children:
+            if children.label != 'repita':
+                aux.append(children)
+        root.children = aux
+        aux = []
+
+    if root.label == 'e' and root.children[0].label == '&&':
+        root.children = []
+        root.label = '&&'
+        root.name = '&&'
+
+    if root.label == 'ou' and root.children[0].label == '||':
+        root.children = []
+        root.label = '||'
+        root.name = '||'
+
+
+    if root.label == 'se' and len(root.children) > 0:
+        for children in root.children:
+            if children.label != 'se':
+                aux.append(children)
+
+        root.children = aux
+        aux = []
+
+    if root.label == 'ATE':
+        root.children = []
+        root.label = 'até'
+        root.name = 'até'
+
+    if root.label == 'leia' or root.label == 'escreva' or root.label == 'retorna':
+        if len(root.children) == 0:
+            for children in dad.children:
+                if children != root:
+                    aux.append(children)
+
+            dad.children = aux
 
 def main():
     print ('\n\n')
@@ -171,5 +256,7 @@ def main():
 
     print ('\n')
     cutTree(tree)
+    newTree(tree)
+    UniqueDotExporter(tree).to_picture(f"{sys.argv[1]}.cut.unique.ast.png")
 if __name__ == "__main__":
     main()
