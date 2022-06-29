@@ -16,7 +16,7 @@ blacklist = ['ID', 'var', 'lista_variaveis', 'dois_pontos', 'tipo','INTEIRO', 'F
             'atribuicao','operador_soma', 'mais', 'chamada_funcao', 'lista_argumentos', 'VIRGULA','virgula', 'fator', 'cabecalho',
             'FIM', 'lista_parametros', 'vazio','(', ')', ':', ',', 'RETORNA', 'ESCREVA', 'SE', 'ENTAO', 'SENAO', 'maior',
             'menor', 'REPITA', 'igual', 'menos', 'menor_igual', 'maior_igual', 'operador_logico','operador_multiplicacao', 'vezes',
-            'ABRE_PARENTESE','FECHA_PARENTESE','MAIS','operador_relacional','MAIOR','MENOR','IGUAL','soma','parametro','id']
+            'ABRE_PARENTESE','FECHA_PARENTESE','MAIS','operador_relacional','MAIOR','MENOR','IGUAL','parametro','id']
 
 def declaredVar(knot):
     global dataFrameVar 
@@ -180,6 +180,7 @@ def cutTree(root):
             aux.append(children)
         root.children = aux
         dad.children = aux
+    return root
 
 def newTree(root):
     for node in root.children:
@@ -226,6 +227,7 @@ def newTree(root):
                     aux.append(children)
 
             dad.children = aux
+    return root
 
 def main():
     print ('\n\n')
@@ -255,8 +257,10 @@ def main():
         print ('\n')
 
     print ('\n')
-    cutTree(tree)
-    newTree(tree)
+    tree = cutTree(tree)
+    tree = newTree(tree)
     UniqueDotExporter(tree).to_picture(f"{sys.argv[1]}.cut.unique.ast.png")
+    return tree
+    
 if __name__ == "__main__":
     main()
