@@ -105,10 +105,10 @@ def treeTravel(root):
                             qtd_param = qtd_param + 1 
                             son = len(node.children[idx].children[2].children)
                             for i in range (2,son,2):
-                                id = node.children[idx].children[2].children[i].children[2].children[0].label
-                                a = id+' '
-                                parametros.append(a)
-                                qtd_param = qtd_param + 1 
+                                    id = node.children[idx].children[2].children[i].children[2].children[0].label
+                                    a = id+' '
+                                    parametros.append(a)
+                                    qtd_param = qtd_param + 1 
                     else:
                         if (node.children[idx].children[2].children[0].children[2].children[0].label != None):
                             id = node.children[idx].children[2].children[0].children[2].children[0].label
