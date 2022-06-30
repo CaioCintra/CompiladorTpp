@@ -11,7 +11,12 @@ variables = {}
 global builder
 
 def moduleCreate():
+    global escrevaInteiro, escrevaFlutuante, leiaInteiro, leiaFlutuante
     module = ir.Module('modulo.bc')
+    escrevaInteiro = ir.Function(module, ir.FunctionType(ir.VoidType(), [ir.IntType(32)]), name="escrevaInteiro")
+    leiaInteiro = ir.Function(module, ir.FunctionType(ir.IntType(32), []), name="leiaInteiro")
+    escrevaFlutuante = ir.Function(module, ir.FunctionType(ir.VoidType(), [ir.FloatType()]), name="escrevaFlutuante")
+    leiaFlutuante = ir.Function(module, ir.FunctionType(ir.FloatType(), []), name="leiaFlutuante")
     return module
 
 def moduleSave(module):
@@ -26,7 +31,6 @@ def globalVar(name: str, _type: ir.Type, module) -> ir.GlobalValue:
     temp.initializer = ir.Constant(_type, 0)
     temp.align = 4
     variables[name] = temp
-    print(variables)
     
 
     return temp
@@ -35,6 +39,14 @@ def treeTravel(root, module):
     global builder
     global variables
     global endBasicBlock
+    global ifSe
+    global ifSe2
+    global main
+    global ifRepita
+    global listEnd
+    global loop
+    global validate
+    global escrevaInteiro, escrevaFlutuante, leiaInteiro, leiaFlutuante
     for node in root.children:
         if(node.label == 'declaracao_variaveis' and node.parent.label == 'programa'):                       #Declaração de variável
             name = node.children[1].label
@@ -49,16 +61,30 @@ def treeTravel(root, module):
                 variablesKey = variables.get(value1)
                 if(variablesKey != None):
                     value1 = variables[value1]
-                value2 = node.children[2].label
-                variablesKey = variables.get(value2)
-                if(variablesKey != None):
-                    value2Var = variables[value2]
-                    # carregando value2Var em uma variável temporária
-                    value2 = builder.load(value2Var,"")
-                    builder.store(value2, value1)  
+
+                if(len(node.children)>3):
+                    var1 = node.children[2].label
+                    var2 = node.children[4].label
+                    op = node.children[3].label
+                    var1 = variables.get(var1)
+                    if(op == '+'):
+                        var2 = variables.get(var2)
+                        operation = builder.add(builder.load(var1),builder.load(var2),name='add')
+                    else:
+                        var2 = ir.Constant(ir.IntType(32),int(var2))
+                        operation = builder.sub(builder.load(var1),var2,name='sub')
+                    builder.store(operation,value1)
                 else:
-                    value2 = int(value2)
-                    builder.store(ir.Constant(ir.IntType(32), value2), value1)  
+                    value2 = node.children[2].label
+                    variablesKey = variables.get(value2)
+                    if(variablesKey != None):
+                        value2Var = variables[value2]
+                        # carregando value2Var em uma variável temporária
+                        value2 = builder.load(value2Var,"")
+                        builder.store(value2, value1)  
+                    else:
+                        value2 = int(value2)
+                        builder.store(ir.Constant(ir.IntType(32), value2), value1)  
 
         if(node.label == 'declaracao_funcao'):                          #Declaração de Função
             if(node.children[0].label == 'inteiro'):
@@ -97,42 +123,157 @@ def treeTravel(root, module):
                             num1 = ir.Constant(ir.FloatType(32),0)
                             builder.store(num1, temp)
                             variables[name] = temp
-                            print(variables)
                     if(len(aux.children)>1):
                         if(len(aux.children)>1):
-                            if(aux.children[1].children[0].label == 'se'):
-                                iftrue_1 = main.append_basic_block('iftrue_1')
-                                iffalse_1 = main.append_basic_block('iffalse_1')
-                                ifend_1 = main.append_basic_block('ifend_1')
+                            if(aux.children[1].children[0].label == 'se' and aux.children[1].children[0].children[0].label == 'corpo'):
+                                if(not ifSe):
 
-                                cmp1 = builder.load(temp, 'cmp1', align=4)
-                                cmp2 = builder.load(temp, 'cmp2', align=4)
-
-                                If_1 = builder.icmp_signed('<', cmp1, cmp2, name='if_test_1')
-                                builder.cbranch(If_1, iftrue_1, iffalse_1)
-
-                                builder.position_at_end(iftrue_1)
-                                builder.store(ir.Constant(ir.IntType(32), 5), temp)
-                                builder.branch(ifend_1)
-
-                                builder.position_at_end(iffalse_1)
-                                builder.store(ir.Constant(ir.IntType(32), 6), temp)
-                                builder.branch(ifend_1)
-
-                                builder.position_at_end(ifend_1)
+                                    pass
+                                elif(aux.children[1].children[0].label == 'fim'):
+                                    if(aux.children[1].children[0].parent.label == 'se'):
+                                        pass
+                                        
+                            elif(aux.children[1].children[0].label == 'se' and aux.children[1].children[0].children[1].label == 'corpo'):
+                                if(ifSe):
+                                    pass
        
                     aux = aux.parent
 
-        if(node.label == 'retorna'):           
+        if(node.label == 'se'):
+            if(ifSe == None):
+                iftrue_1 = main.append_basic_block('iftrue_1')
+                iffalse_1 = main.append_basic_block('iffalse_1')
+                listEnd.append(iffalse_1)
 
-            builder.branch(endBasicBlock)
+                name = node.children[2].label    #a
+                signal = node.children[3].label  #>
+                name2 = node.children[4].label   #5
+                ifSe = True
+                nameLoad = variables.get(name)
+                nameVar = variables[name]
+
+                name2Key = variables.get(name2)
+            
+                if(name2Key != None):
+
+                    name2Var = variables[name2]
+                    name2 = builder.load(name2Var,"")
+                else:
+                    name2 = int(name2)
+                    name2 = ir.Constant(ir.IntType(32),name2)
+
+
+                a_cmp = builder.load(nameLoad, 'a_cmp', align=4)
+                b_cmp = name2
+
+
+                If_1 = builder.icmp_signed(signal, a_cmp, b_cmp, name='if_test_1')
+                builder.cbranch(If_1, iftrue_1, iffalse_1)
+
+                builder.position_at_end(iftrue_1)
+            elif(ifSe2 == None):
+                iftrue_1 = main.append_basic_block('iftrue_1')
+                iffalse_1 = main.append_basic_block('iffalse_1')
+                listEnd.append(iffalse_1)
+
+                name = node.children[2].label    #a
+                signal = node.children[3].label  #>
+                name2 = node.children[4].label   #5
+                ifSe2 = True
+                nameLoad = variables.get(name)
+                nameVar = variables[name]
+
+                name2Key = variables.get(name2)
+            
+                if(name2Key != None):
+
+                    name2Var = variables[name2]
+                    name2 = builder.load(name2Var,"")
+                else:
+                    name2 = int(name2)
+                    name2 = ir.Constant(ir.IntType(32),name2)
+
+
+                a_cmp = builder.load(nameLoad, 'a_cmp', align=4)
+                b_cmp = name2
+
+
+                If_1 = builder.icmp_signed(signal, a_cmp, b_cmp, name='if_test_1')
+                builder.cbranch(If_1, iftrue_1, iffalse_1)
+
+                builder.position_at_end(iftrue_1)
+        if(node.label == 'corpo'):
+            if(ifSe2 != None):
+
+                if(ifSe2):
+                    ifSe2 = False
+
+                elif(not ifSe2):
+                    builder.branch(endBasicBlock)
+                    builder.position_at_end(listEnd.pop())
+                    ifSe2 = None
+            elif(ifSe != None):
+
+                if(ifSe):
+                    ifSe = False
+
+                elif(not ifSe):
+                    builder.branch(endBasicBlock)
+                    builder.position_at_end(listEnd.pop())
+                    ifSe = None
+        if(node.label == 'repita'):
+            ifRepita = True
+            validate = main.append_basic_block('validate')
+            loop = main.append_basic_block('loop')
+            listEnd.append(endBasicBlock)
+            builder.branch(loop)
+            builder.position_at_end(loop)
+
+            
+        if(node.label == 'até'): 
+            builder.branch(validate)
+            builder.position_at_end(validate)
+            name = node.parent.children[2].label    #a
+            signal = node.parent.children[3].label  #>
+            name2 = node.parent.children[4].label   #5
+            nameLoad = variables.get(name)
+            nameVar = variables[name]
+
+            name2Key = variables.get(name2)
+        
+            if(name2Key != None):
+
+                name2Var = variables[name2]
+                name2 = builder.load(name2Var,"")
+            else:
+                name2 = int(name2)
+                name2 = ir.Constant(ir.IntType(32),name2)
+
+
+            a_cmp = builder.load(nameLoad, 'a_cmp', align=4)
+            b_cmp = name2
+
+            if(signal == '='):
+                signal = '=='
+            If_1 = builder.icmp_signed(signal, a_cmp, b_cmp, name='if_test_1')
+            returnAte = listEnd.pop()
+            builder.cbranch(If_1, returnAte, loop)
+            builder.position_at_end(returnAte)
+
+        if(node.label == 'escreva'):
+           var1 = node.children[0].label
+           var1 = builder.load(variables.get(var1))
+           builder.call(escrevaInteiro,[var1]) 
+
+        if(node.label == 'retorna'): 
+            if(ifRepita == None):
+                builder.branch(endBasicBlock)
             builder.position_at_end(endBasicBlock)
 
             retorno = builder.alloca(ir.IntType(32), name='retorno')
 
             retorno.align = 4
             returnValue = 0
-            value32 = ir.Constant(ir.IntType(32), 0)
 
             if(len(node.children) == 1):
 
@@ -143,9 +284,9 @@ def treeTravel(root, module):
                     returnValue = builder.load(returnVar,"")
                 else:
                     returnValue = int(returnValue)
-                    value32 = ir.Constant(ir.IntType(32), returnValue)
-
+                    returnValue = ir.Constant(ir.IntType(32), returnValue)
             builder.ret(returnValue)
+            print(str(module))          
                 
 
             
@@ -153,6 +294,12 @@ def treeTravel(root, module):
         listNode = treeTravel(node,module) 
 
 def main():
+    global ifSe, ifSe2, ifRepita, listEnd, loop, validate
+    listEnd = []
+    ifSe = None
+    ifSe2 = None
+    ifRepita = None
+    loop = None
     tree = tppsemantic.main()
     print(tree)
     module = moduleCreate()

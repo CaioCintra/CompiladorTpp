@@ -16,7 +16,7 @@ blacklist = ['ID', 'var', 'lista_variaveis', 'dois_pontos', 'tipo','INTEIRO', 'F
             'atribuicao','operador_soma', 'mais', 'chamada_funcao', 'lista_argumentos', 'VIRGULA','virgula', 'fator', 'cabecalho',
             'FIM', 'lista_parametros', 'vazio','(', ')', ':', ',', 'RETORNA', 'ESCREVA', 'SE', 'ENTAO', 'SENAO', 'maior',
             'menor', 'REPITA', 'igual', 'menos', 'menor_igual', 'maior_igual', 'operador_logico','operador_multiplicacao', 'vezes',
-            'ABRE_PARENTESE','FECHA_PARENTESE','MAIS','operador_relacional','MAIOR','MENOR','IGUAL','parametro','id']
+            'ABRE_PARENTESE','FECHA_PARENTESE','MAIS','operador_relacional','MAIOR','MENOR','IGUAL','parametro', 'MENOS','id']
 
 def declaredVar(knot):
     global dataFrameVar 
